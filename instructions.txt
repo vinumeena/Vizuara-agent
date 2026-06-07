@@ -1,0 +1,468 @@
+================================================================
+PHASE 2 - VIZUARA: REAL-WORLD CONTEXT-ENGINEERED AGENT
+STEP-BY-STEP BUILD INSTRUCTIONS
+================================================================
+Task: Build an end-to-end AI agent on a real platform using
+      Claude Code, with intent routing, context window management,
+      confidence prediction, deployment, and deliverables.
+
+================================================================
+OVERVIEW OF THE PIPELINE
+================================================================
+
+  instructions.txt
+       ↓
+  CLAUDE.md (project config for Claude Code)
+       ↓
+  LLM Wiki (your knowledge base / product knowledge)
+       ↓
+  Intent Router (classify what the user is asking)
+       ↓
+  Context Window Builder (inject relevant context)
+       ↓
+  Confidence Predictor (score reliability of response)
+       ↓
+  Routing Logic (escalate, answer, or fallback)
+       ↓
+  Deploy (Railway / Vercel)
+
+================================================================
+STEP 1 — PICK YOUR PLATFORM
+================================================================
+
+Choose ONE platform where you already have data or API access:
+
+  Option A: Email (Gmail / Outlook)
+    - Use Gmail API or Microsoft Graph API
+    - Scrape: past emails, threads, auto-replies
+
+  Option B: Microsoft Teams
+    - Use Microsoft Graph API
+    - Scrape: chat messages, channel history, past replies
+
+  Option C: Slack
+    - Use Slack Web API
+    - Scrape: channel messages, DMs, thread replies
+
+  RECOMMENDED: Microsoft Teams (matches your Ramco email domain)
+
+  Action Items:
+    [ ] Create an app registration in Azure Portal (for Teams/Outlook)
+        OR enable Gmail API in Google Cloud Console
+    [ ] Save CLIENT_ID, CLIENT_SECRET, TENANT_ID to a .env file
+    [ ] Test API connection with a simple script (list_messages.py)
+
+================================================================
+STEP 2 — SCRAPE & STRUCTURE YOUR DATA
+================================================================
+
+Collect three types of data from your platform:
+
+  2a. Chat History / Email Threads
+      - Pull last 500–1000 messages/emails
+      - Store as: { "user_query": "...", "agent_reply": "..." }
+
+  2b. Product Knowledge
+      - Collect FAQs, product docs, SOPs from your org
+      - Store as: { "topic": "...", "content": "..." }
+
+  2c. Preference / Behavioral Data
+      - Past user preferences (language, format, tone)
+      - Store as: { "user_id": "...", "preferences": {...} }
+
+  Output format: JSONL files in /data/ folder
+    data/
+      chat_history.jsonl
+      product_knowledge.jsonl
+      user_preferences.jsonl
+
+  Tools to use:
+    - Python + requests / msal (Microsoft) / google-auth
+    - pandas for cleaning
+    - json / jsonlines for storage
+
+================================================================
+STEP 3 — CREATE CLAUDE.md (Project Config for Claude Code)
+================================================================
+
+Create a CLAUDE.md file in your project root.
+This tells Claude Code how your project works.
+
+  Contents of CLAUDE.md:
+    - Project name and purpose
+    - Folder structure explanation
+    - How to run the app (dev server command)
+    - Environment variables needed
+    - Key files and what they do
+    - How to run tests
+
+  Example CLAUDE.md structure:
+    # Project: Vizuara Context-Engineered Agent
+    ## Purpose
+    AI agent that answers queries using real platform data
+    ## Stack
+    Python, FastAPI, Claude API, Railway deployment
+    ## Run
+    uvicorn main:app --reload
+    ## Env vars needed
+    ANTHROPIC_API_KEY, PLATFORM_CLIENT_ID, PLATFORM_CLIENT_SECRET
+
+================================================================
+STEP 4 — BUILD THE LLM WIKI (Knowledge Base)
+================================================================
+
+Create a structured knowledge base your agent will use.
+
+  File: /wiki/llm_wiki.py
+
+  Structure:
+    - Load product_knowledge.jsonl
+    - Chunk into 200–400 token passages
+    - Create embeddings using Claude or sentence-transformers
+    - Store in a vector store (ChromaDB or simple FAISS)
+
+  Functions to implement:
+    search_wiki(query: str, top_k: int = 5) -> list[dict]
+      - Embeds query
+      - Returns top_k most relevant passages
+
+  Simple alternative (no embeddings):
+    - Use BM25 keyword search (rank_bm25 library)
+    - Faster to build, good enough for demo
+
+================================================================
+STEP 5 — BUILD THE INTENT ROUTER
+================================================================
+
+Classify every incoming query into one of these intents:
+
+  Intent Categories (customize to your domain):
+    - PRODUCT_FAQ       → "What does feature X do?"
+    - TROUBLESHOOT      → "I'm getting error Y"
+    - ACCOUNT_QUERY     → "How do I reset my password?"
+    - GENERAL_CHAT      → "Hello, how are you?"
+    - ESCALATE          → "I need to speak to a human"
+    - OUT_OF_SCOPE      → Anything unrelated
+
+  File: /router/intent_router.py
+
+  Implementation approach:
+    Option A (LLM-based):
+      prompt = f"""
+      Classify this query into one of:
+      [PRODUCT_FAQ, TROUBLESHOOT, ACCOUNT_QUERY,
+       GENERAL_CHAT, ESCALATE, OUT_OF_SCOPE]
+
+      Query: {user_query}
+      Reply with ONLY the category name.
+      """
+      response = claude.messages.create(...)
+
+    Option B (keyword-based, faster):
+      rules = {
+        "TROUBLESHOOT": ["error", "issue", "broken", "not working"],
+        "ESCALATE": ["human", "agent", "manager", "speak to"],
+        ...
+      }
+
+  Return: { "intent": "PRODUCT_FAQ", "confidence": 0.92 }
+
+================================================================
+STEP 6 — BUILD THE CONTEXT WINDOW
+================================================================
+
+Construct the optimal context to send to Claude for each query.
+
+  File: /context/context_builder.py
+
+  Function: build_context(user_query, intent, user_id) -> str
+
+  Context layers to include:
+    1. System prompt (role + behavior rules)
+    2. Relevant wiki passages (from Step 4 search)
+    3. Last 5 conversation turns (from chat history)
+    4. User preferences (tone, language, format)
+    5. Current user query
+
+  Token budget management:
+    - Max context: 8000 tokens (leave 2000 for response)
+    - Priority order: system > preferences > wiki > history > query
+    - Truncate history first if over budget
+
+  Use tiktoken or Claude's token counter to measure:
+    import anthropic
+    client = anthropic.Anthropic()
+    token_count = client.beta.messages.count_tokens(...)
+
+================================================================
+STEP 7 — BUILD THE CONFIDENCE PREDICTOR
+================================================================
+
+Score how confident the agent is in its response.
+
+  File: /confidence/predictor.py
+
+  Signals to use:
+    Signal 1 — Wiki retrieval score
+      (cosine similarity of top result: 0.0 to 1.0)
+
+    Signal 2 — Intent confidence
+      (from intent router: 0.0 to 1.0)
+
+    Signal 3 — Response self-assessment (LLM-graded)
+      Ask Claude: "On a scale of 1-10, how confident are you
+      in the above answer? Reply with only a number."
+
+    Signal 4 — Query coverage
+      (Did wiki passages cover the query keywords?)
+
+  Final score formula:
+    confidence = 0.4 * wiki_score
+               + 0.3 * intent_confidence
+               + 0.2 * llm_self_score
+               + 0.1 * coverage_score
+
+  Thresholds:
+    >= 0.75 → HIGH confidence  → Answer directly
+    0.50–0.74 → MEDIUM        → Answer with disclaimer
+    < 0.50  → LOW             → Escalate or ask clarifying question
+
+================================================================
+STEP 8 — BUILD THE ROUTING LOGIC
+================================================================
+
+Wire everything together in main routing logic.
+
+  File: /router/main_router.py
+
+  Flow:
+    1. Receive user_query + user_id
+    2. Run intent_router → get intent
+    3. Build context via context_builder
+    4. Call Claude API → get response
+    5. Run confidence_predictor → get score
+    6. Apply routing rules:
+       - intent == ESCALATE → return "Connecting to human agent..."
+       - intent == OUT_OF_SCOPE → return "I can only help with X"
+       - confidence < 0.50 → return clarifying question
+       - confidence >= 0.50 → return Claude's response
+    7. Log everything: query, intent, confidence, response, latency
+
+  Logging schema (store in logs/query_log.jsonl):
+    {
+      "timestamp": "...",
+      "user_id": "...",
+      "query": "...",
+      "intent": "...",
+      "intent_confidence": 0.92,
+      "wiki_score": 0.85,
+      "final_confidence": 0.88,
+      "response": "...",
+      "latency_ms": 1240,
+      "tokens_used": 850
+    }
+
+================================================================
+STEP 9 — BUILD THE API + DASHBOARD
+================================================================
+
+  9a. FastAPI Backend
+      File: main.py
+
+      Endpoints:
+        POST /chat         → accepts query, returns response + confidence
+        GET  /health       → returns {"status": "ok"}
+        GET  /metrics      → returns performance stats from logs
+
+      Install: pip install fastapi uvicorn anthropic python-dotenv
+
+  9b. Simple Dashboard (optional but great for screen recording)
+      File: dashboard.py  (use Streamlit)
+
+      Show:
+        - Chat interface (input box + response)
+        - Confidence score bar (color-coded: green/yellow/red)
+        - Recent queries table (intent, confidence, latency)
+        - Performance metrics (avg confidence, avg latency)
+
+      Install: pip install streamlit plotly pandas
+
+  9c. Run locally to test:
+      uvicorn main:app --reload        (API)
+      streamlit run dashboard.py       (Dashboard)
+
+================================================================
+STEP 10 — PROJECT FOLDER STRUCTURE
+================================================================
+
+  vizuara-agent/
+  ├── .env                    ← API keys (never commit this)
+  ├── .gitignore
+  ├── CLAUDE.md               ← Claude Code config
+  ├── instructions.txt        ← This file
+  ├── requirements.txt
+  ├── main.py                 ← FastAPI app entry point
+  ├── dashboard.py            ← Streamlit dashboard
+  ├── data/
+  │   ├── chat_history.jsonl
+  │   ├── product_knowledge.jsonl
+  │   └── user_preferences.jsonl
+  ├── wiki/
+  │   └── llm_wiki.py
+  ├── router/
+  │   ├── intent_router.py
+  │   └── main_router.py
+  ├── context/
+  │   └── context_builder.py
+  ├── confidence/
+  │   └── predictor.py
+  └── logs/
+      └── query_log.jsonl
+
+================================================================
+STEP 11 — DEPLOY (Railway or Vercel)
+================================================================
+
+  Option A: Railway (RECOMMENDED for Python/FastAPI)
+
+    Steps:
+      1. Create account at railway.app
+      2. New Project → Deploy from GitHub repo
+      3. Add environment variables in Railway dashboard:
+           ANTHROPIC_API_KEY=...
+           PLATFORM_CLIENT_ID=...
+           PLATFORM_CLIENT_SECRET=...
+      4. Add Procfile:
+           web: uvicorn main:app --host 0.0.0.0 --port $PORT
+      5. Push code → Railway auto-deploys
+      6. Copy the generated URL (e.g. vizuara-agent.up.railway.app)
+
+  Option B: Vercel (better for Next.js/Node, possible for Python)
+    - Use Vercel's Python serverless functions
+    - Slightly more complex for FastAPI
+
+  After deployment:
+    [ ] Test /chat endpoint via Postman or curl
+    [ ] Test /metrics endpoint
+    [ ] Open dashboard URL
+
+================================================================
+STEP 12 — PERFORMANCE ANALYSIS (For PDF Report)
+================================================================
+
+Run these tests and record results for your report:
+
+  Accuracy Test:
+    - Create 20 test queries with known correct answers
+    - Run through agent, grade responses manually (correct/incorrect)
+    - Accuracy = correct_count / 20
+
+  Speed Test:
+    - Measure latency for 20 queries
+    - Calculate: avg, min, max, p95 latency
+
+  Cost Test:
+    - Log token usage per query (from Claude API response)
+    - Calculate: avg tokens per query × Claude pricing
+    - Claude Sonnet 4.6 pricing:
+        Input: $3 per million tokens
+        Output: $15 per million tokens
+
+  Hallucination Rate:
+    - For queries where wiki had NO relevant content,
+      did the agent still give a confident answer?
+    - Flag these as potential hallucinations
+
+  Dashboard metrics to show:
+    - Total queries handled
+    - Average confidence score
+    - Intent distribution (pie chart)
+    - Latency over time (line chart)
+    - Confidence distribution (histogram)
+
+================================================================
+STEP 13 — DELIVERABLES CHECKLIST
+================================================================
+
+  [ ] DELIVERABLE 1: Screen Recording (5–10 min)
+        Record your screen showing:
+        - Open the deployed dashboard URL
+        - Type 3–5 real queries
+        - Show confidence score for each response
+        - Show the metrics/dashboard view
+        - Narrate what each component is doing
+        Tools: OBS Studio (free), Loom, or Windows Game Bar (Win+G)
+
+  [ ] DELIVERABLE 2: PDF Report (2–3 pages)
+        Section 1: Build Process (1 page)
+          - Platform chosen and why
+          - Architecture diagram (draw with draw.io or Excalidraw)
+          - Key design decisions
+
+        Section 2: Performance Analysis (1 page)
+          - Accuracy: X/20 correct
+          - Avg latency: X ms
+          - Avg cost per query: $X
+          - Hallucination rate: X%
+
+        Section 3: Learnings & Improvements (0.5 page)
+          - What worked well
+          - What you would improve next
+
+        Tools: Google Docs → Export as PDF
+
+  [ ] DELIVERABLE 3: Hosted Application Link
+        - Your Railway/Vercel URL
+        - Should be live and accessible
+        - Submit via Microsoft Forms
+
+================================================================
+STEP 14 — RECOMMENDED TECH STACK SUMMARY
+================================================================
+
+  Language:        Python 3.11+
+  LLM:             Claude Sonnet 4.6 (claude-sonnet-4-6)
+  Framework:       FastAPI (API) + Streamlit (Dashboard)
+  Vector Search:   ChromaDB or rank_bm25
+  Platform API:    Microsoft Graph API (Teams/Outlook)
+  Deployment:      Railway
+  Logging:         JSONL file (simple) or SQLite
+  Environment:     python-dotenv for .env management
+
+  Install all at once:
+    pip install anthropic fastapi uvicorn streamlit
+               python-dotenv pandas plotly chromadb
+               msal requests tiktoken rank_bm25
+
+================================================================
+STEP 15 — QUICK START ORDER (DO THIS FIRST)
+================================================================
+
+  Day 1 (Setup + Data):
+    1. Create project folder structure
+    2. Set up .env with API keys
+    3. Write CLAUDE.md
+    4. Connect to platform API and pull data
+    5. Save data to /data/ folder
+
+  Day 2 (Core Components):
+    6. Build LLM Wiki with search
+    7. Build Intent Router
+    8. Build Context Window Builder
+    9. Build Confidence Predictor
+
+  Day 3 (Integration + API):
+    10. Wire everything in main_router.py
+    11. Build FastAPI endpoints
+    12. Build Streamlit dashboard
+    13. Test locally with real queries
+
+  Day 4 (Deploy + Deliverables):
+    14. Deploy to Railway
+    15. Record screen demo
+    16. Write PDF report
+    17. Submit via Microsoft Forms
+
+================================================================
+END OF INSTRUCTIONS
+================================================================
