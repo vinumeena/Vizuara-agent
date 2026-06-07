@@ -10,8 +10,13 @@ Produces three JSONL files:
 
 import json
 import random
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+
+# Allow importing aviation_data from same folder
+sys.path.insert(0, str(Path(__file__).parent))
+from aviation_data import AVIATION_CHAT_QA, AVIATION_KNOWLEDGE
 
 OUTPUT_DIR = Path(__file__).parent
 random.seed(42)
@@ -270,6 +275,47 @@ USER_PREFERENCES_POOL = [
 
 # ── Generators ────────────────────────────────────────────────────────────────
 
+def generate_aviation_chat_history() -> list[dict]:
+    records = []
+    aviation_sources = [
+        "channel_MRO-Support",
+        "channel_Aviation-Technical",
+        "channel_Compliance",
+        "channel_LineMaintenace",
+        "chat_personal_av01",
+    ]
+    aviation_users = [
+        "James Carter", "Priya Nair", "Mohammed Al-Rashid", "Sarah Chen",
+        "Ravi Krishnan", "Anita Shah", "Tom Williams", "Deepak Menon",
+    ]
+    for i, (query, reply, agent) in enumerate(AVIATION_CHAT_QA):
+        records.append({
+            "user_query":  query,
+            "agent_reply": reply,
+            "sender":      random.choice(aviation_users),
+            "responder":   agent,
+            "timestamp":   rand_ts(),
+            "source":      random.choice(aviation_sources),
+            "turn_id":     i + 1,
+            "domain":      "aviation",
+        })
+    return records
+
+
+def generate_aviation_knowledge() -> list[dict]:
+    records = []
+    for entry in AVIATION_KNOWLEDGE:
+        records.append({
+            "topic":     entry["topic"],
+            "content":   entry["content"],
+            "author":    "Product Expert",
+            "timestamp": rand_ts(180),
+            "source":    "teams_channel_aviation",
+            "domain":    "aviation",
+        })
+    return records
+
+
 def generate_chat_history() -> list[dict]:
     records = []
     sources = [
@@ -348,27 +394,27 @@ def main():
     print("VIZUARA MOCK DATA GENERATOR")
     print("=" * 55)
 
+    # Core ERP + HR data
     chat_records  = generate_chat_history()
     know_records  = generate_product_knowledge()
     pref_records  = generate_user_preferences()
 
-    save_jsonl(OUTPUT_DIR / "chat_history.jsonl",       chat_records)
-    save_jsonl(OUTPUT_DIR / "product_knowledge.jsonl",  know_records)
-    save_jsonl(OUTPUT_DIR / "user_preferences.jsonl",   pref_records)
+    # Aviation data (merged in)
+    aviation_chat = generate_aviation_chat_history()
+    aviation_know = generate_aviation_knowledge()
 
-    print("\nSample chat Q&A:")
-    print(f"  Q: {chat_records[0]['user_query'][:70]}...")
-    print(f"  A: {chat_records[0]['agent_reply'][:70]}...")
+    all_chat  = chat_records + aviation_chat
+    all_know  = know_records + aviation_know
 
-    print("\nSample knowledge entry:")
-    print(f"  Topic: {know_records[0]['topic']}")
-    print(f"  Content: {know_records[0]['content'][:80]}...")
+    save_jsonl(OUTPUT_DIR / "chat_history.jsonl",      all_chat)
+    save_jsonl(OUTPUT_DIR / "product_knowledge.jsonl", all_know)
+    save_jsonl(OUTPUT_DIR / "user_preferences.jsonl",  pref_records)
 
     print(f"\nData generation complete.")
-    print(f"  {len(chat_records)} chat Q&A pairs")
-    print(f"  {len(know_records)} knowledge entries")
+    print(f"  {len(all_chat)} chat Q&A pairs  ({len(aviation_chat)} aviation + {len(chat_records)} ERP/HR)")
+    print(f"  {len(all_know)} knowledge entries  ({len(aviation_know)} aviation + {len(know_records)} ERP/HR)")
     print(f"  {len(pref_records)} user preference profiles")
-    print("\nNext: python wiki/llm_wiki.py")
+    print("\nNext: push to GitHub -> Railway auto-redeploys")
 
 
 

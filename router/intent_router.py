@@ -14,6 +14,7 @@ INTENTS = [
     "IT_SUPPORT",       # technical issues, software, hardware, access
     "HR_QUERY",         # leave, payroll, policy, onboarding, benefits
     "PRODUCT_ERP",      # Ramco ERP / HCM usage questions
+    "AVIATION_MRO",     # Ramco Aviation Suite — MRO, maintenance, compliance
     "PROJECT_MGMT",     # project tracking, milestones, resources
     "GENERAL_CHAT",     # greetings, thanks, casual messages
     "ESCALATE",         # explicit request for human/manager
@@ -22,6 +23,17 @@ INTENTS = [
 
 # Keyword rules — ordered by specificity (checked top to bottom, first match wins)
 _RULES: list[tuple[str, list[str]]] = [
+    ("AVIATION_MRO", [
+        "work order", "mro", "airworthiness", "airworthiness directive", "ad compliance",
+        "service bulletin", "maintenance programme", "aircraft", "tail number",
+        "flight hours", "flight cycles", "life limited", "llp", "aog",
+        "aircraft on ground", "defect", "technical log", "certificate of release",
+        "crs", "easa", "faa", "dgca", "part-145", "ata chapter",
+        "line maintenance", "base maintenance", "hangar", "c-check", "a-check",
+        "component", "part number", "serial number", "form 1", "coc",
+        "airframe", "engine shop", "crew licence", "lame", "ame",
+        "maintenance forecast", "task card", "maintenance planning",
+    ]),
     ("ESCALATE", [
         "speak to human", "talk to agent", "need a person", "escalate",
         "manager please", "real person", "human agent", "talk to someone",
