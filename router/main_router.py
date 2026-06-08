@@ -30,9 +30,9 @@ LOG_PATH.parent.mkdir(exist_ok=True)
 ESCALATION_MESSAGE = (
     "I understand you'd like to speak with a team member directly. "
     "Please reach out through one of these channels:\n"
-    "- IT Support: itsupport@ramco.com | Ext. 1100\n"
-    "- HR Helpdesk: hr@ramco.com | Ext. 1200\n"
-    "- General Support: helpdesk@ramco.com\n"
+    "- IT Support: itsupport@vizuara-demo.com | Ext. 1100\n"
+    "- HR Helpdesk: hr@vizuara-demo.com | Ext. 1200\n"
+    "- General Support: helpdesk@vizuara-demo.com\n"
     "A team member will get back to you within 2 business hours."
 )
 

@@ -54,7 +54,7 @@ CHAT_QA_PAIRS = [
 
     # ── IT Helpdesk ──────────────────────────────────────────────────────────
     ("How do I reset my VPN password?",
-     "You can reset your VPN password by visiting the IT portal at intranet.ramco.com/reset-password. Enter your employee ID and click 'Reset VPN Credentials'. You'll receive an OTP on your registered mobile. If you still face issues, raise a ticket under category IT > Network > VPN.",
+     "You can reset your VPN password by visiting the IT portal at intranet.vizuara-demo.com/reset-password. Enter your employee ID and click 'Reset VPN Credentials'. You'll receive an OTP on your registered mobile. If you still face issues, raise a ticket under category IT > Network > VPN.",
      "IT Support"),
 
     ("My laptop is running very slow since the last Windows update. What should I do?",
@@ -87,11 +87,11 @@ CHAT_QA_PAIRS = [
 
     # ── HR Queries ───────────────────────────────────────────────────────────
     ("How do I apply for casual leave in the HRMS portal?",
-     "Log in to the HRMS portal at hrms.ramco.com. Go to Leave Management > Apply Leave. Select Leave Type as 'Casual Leave', choose your from and to dates, add a reason, and click Submit. Your manager will receive an approval notification. You can track status under Leave Management > My Leave Requests.",
+     "Log in to the HRMS portal at hrms.vizuara-demo.com. Go to Leave Management > Apply Leave. Select Leave Type as 'Casual Leave', choose your from and to dates, add a reason, and click Submit. Your manager will receive an approval notification. You can track status under Leave Management > My Leave Requests.",
      "HR Assistant"),
 
     ("What is the maternity leave policy at Ramco?",
-     "As per company policy and the Maternity Benefit Act, eligible female employees are entitled to 26 weeks of paid maternity leave for the first two children. For subsequent children, 12 weeks apply. Additional 6 weeks can be availed for medical complications. Please reach out to HR at hr@ramco.com for the complete policy document.",
+     "As per company policy and the Maternity Benefit Act, eligible female employees are entitled to 26 weeks of paid maternity leave for the first two children. For subsequent children, 12 weeks apply. Additional 6 weeks can be availed for medical complications. Please reach out to HR at hr@vizuara-demo.com for the complete policy document.",
      "HR Assistant"),
 
     ("When is the next performance appraisal cycle?",
@@ -111,7 +111,7 @@ CHAT_QA_PAIRS = [
      "HR Assistant"),
 
     ("How do I refer a candidate for an open position?",
-     "To submit a referral: 1) Go to careers.ramco.com/referral or the Referrals tab in the HRMS portal. 2) Select the open position. 3) Fill in the candidate's details and upload their CV. 4) The referral bonus (if applicable) is processed 3 months after the candidate joins. You can track referral status in the portal.",
+     "To submit a referral: 1) Go to careers.vizuara-demo.com/referral or the Referrals tab in the HRMS portal. 2) Select the open position. 3) Fill in the candidate's details and upload their CV. 4) The referral bonus (if applicable) is processed 3 months after the candidate joins. You can track referral status in the portal.",
      "HR Assistant"),
 
     # ── Product/ERP Queries ──────────────────────────────────────────────────
@@ -158,7 +158,7 @@ CHAT_QA_PAIRS = [
 
     # ── General / Access ─────────────────────────────────────────────────────
     ("How do I request access to a new software or tool?",
-     "Submit a software access request through the IT portal at intranet.ramco.com > IT Requests > Software Access. Select the software from the catalog or add a new one. Provide business justification and your manager's name for approval. Once manager approves, IT provisions access within 2 business days. For licensed software, procurement approval may also be required.",
+     "Submit a software access request through the IT portal at intranet.vizuara-demo.com > IT Requests > Software Access. Select the software from the catalog or add a new one. Provide business justification and your manager's name for approval. Once manager approves, IT provisions access within 2 business days. For licensed software, procurement approval may also be required.",
      "IT Support"),
 
     ("What is the process for onboarding a new team member?",
@@ -166,7 +166,7 @@ CHAT_QA_PAIRS = [
      "HR Assistant"),
 
     ("How can I check my leave balance?",
-     "Log in to HRMS portal at hrms.ramco.com. Go to Leave Management > Leave Balance. You'll see a summary of all leave types — Casual Leave, Sick Leave, Earned Leave, and Compensatory Off — with used, available, and lapsed balances. Leave balances are updated real-time after approvals.",
+     "Log in to HRMS portal at hrms.vizuara-demo.com. Go to Leave Management > Leave Balance. You'll see a summary of all leave types — Casual Leave, Sick Leave, Earned Leave, and Compensatory Off — with used, available, and lapsed balances. Leave balances are updated real-time after approvals.",
      "HR Assistant"),
 
     ("I accidentally deleted a file from SharePoint. Can it be recovered?",
@@ -259,7 +259,7 @@ PRODUCT_KNOWLEDGE = [
     },
     {
         "topic": "Onboarding > New Joiner Checklist",
-        "content": "New joiner setup checklist (IT): 1) Office laptop provisioned and delivered D-1. 2) Email ID created in format firstname.lastname@ramco.com. 3) Microsoft 365 license assigned (E3). 4) VPN access provisioned. 5) Added to relevant Teams channels (department + project). 6) Role-based application access granted within D+3. 7) Security awareness training assigned in LMS. 8) IT orientation scheduled for D+1. Buddy assigned by manager on Day 1.",
+        "content": "New joiner setup checklist (IT): 1) Office laptop provisioned and delivered D-1. 2) Email ID created in format firstname.lastname@vizuara-demo.com. 3) Microsoft 365 license assigned (E3). 4) VPN access provisioned. 5) Added to relevant Teams channels (department + project). 6) Role-based application access granted within D+3. 7) Security awareness training assigned in LMS. 8) IT orientation scheduled for D+1. Buddy assigned by manager on Day 1.",
     },
 ]
 
@@ -340,11 +340,11 @@ def generate_chat_history() -> list[dict]:
     # Add some follow-up turns for richer history
     followups = [
         ("Thanks, that worked!",           "Glad to help! Let me know if you have any other questions.", "IT Support"),
-        ("Where do I find the IT portal?",  "The IT portal is at intranet.ramco.com — accessible only on the corporate network or VPN.", "IT Support"),
+        ("Where do I find the IT portal?",  "The IT portal is at intranet.vizuara-demo.com — accessible only on the corporate network or VPN.", "IT Support"),
         ("Can I do this on mobile too?",    "Yes, the HRMS portal is mobile-responsive. You can also download the Ramco HCM app from the Play Store or App Store.", "HR Assistant"),
         ("How long will this take?",        "Typically 2-4 business hours for standard requests. You'll receive an email notification once it's done.", "HelpDesk Bot"),
         ("Is this mandatory?",              "Yes, this is mandatory for all permanent employees as per company policy. Contractors follow the same process.", "HR Assistant"),
-        ("Who do I escalate to if not resolved?", "If your ticket is not resolved within the SLA, you can escalate to the IT Manager at it-manager@ramco.com or use the Escalate button in the portal.", "IT Support"),
+        ("Who do I escalate to if not resolved?", "If your ticket is not resolved within the SLA, you can escalate to the IT Manager at it-manager@vizuara-demo.com or use the Escalate button in the portal.", "IT Support"),
         ("Can my manager see this request?", "Your manager receives a notification only if their approval is required. Otherwise, it's handled directly by the respective team.", "HR Assistant"),
         ("What if I'm travelling when this is due?", "You can complete this remotely via the portal or mobile app. If you need an extension, inform your manager and raise a request in the portal.", "HelpDesk Bot"),
     ]
