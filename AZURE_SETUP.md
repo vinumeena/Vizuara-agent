@@ -61,7 +61,7 @@ AZURE_CLIENT_SECRET=paste-your-client-secret-here
 AZURE_TENANT_ID=paste-your-tenant-id-here
 GRAPH_SCOPE=https://graph.microsoft.com/.default
 ANTHROPIC_API_KEY=paste-your-anthropic-key-here
-TARGET_USER_EMAIL=vinoodhini.d@ramco.com
+TARGET_USER_EMAIL=your-email@example.com
 ```
 
 ---
